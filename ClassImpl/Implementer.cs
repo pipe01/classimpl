@@ -14,7 +14,7 @@ namespace ClassImpl
         private readonly MethodInfo[] Methods;
 
         internal readonly TypeBuilder Builder;
-        internal readonly IDictionary<string, object> TypeFields = new Dictionary<string, object>();
+        internal readonly IDictionary<FieldBuilder, object> TypeFields = new Dictionary<FieldBuilder, object>();
 
         public Implementer()
         {
@@ -29,7 +29,7 @@ namespace ClassImpl
 
             var ab = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName { Name = "ProxyAssembly" + name }, AssemblyBuilderAccess.Run);
             var mb = ab.DefineDynamicModule("ProxyModule" + name);
-            Builder = mb.DefineType("<>Impl" + name, TypeAttributes.Class, interfaceType);
+            Builder = mb.DefineType("<>Impl" + name, TypeAttributes.Class, null, new[] { interfaceType });
         }
 
         /// <summary>
@@ -59,20 +59,12 @@ namespace ClassImpl
 
         public TInterface Finish()
         {
-            var fields = new List<(FieldBuilder Field, object Value)>();
-
-            foreach (var item in TypeFields)
-            {
-                var field = Builder.DefineField(item.Key, item.Value.GetType(), FieldAttributes.InitOnly);
-                fields.Add((field, item.Value));
-            }
-
-            var fieldTypes = fields.Select(o => o.Field.FieldType).ToArray();
+            var fieldTypes = TypeFields.Select(o => o.Key.FieldType).ToArray();
             var cons = Builder.DefineConstructor(MethodAttributes.Public, CallingConventions.HasThis, fieldTypes);
             var cil = cons.GetILGenerator();
             
             int i = 1;
-            foreach (var (field, _) in fields)
+            foreach (var field in TypeFields.Keys)
             {
                 cil.Emit(OpCodes.Ldarg_0);
                 cil.Emit(OpCodes.Ldarg, i++);
@@ -81,7 +73,15 @@ namespace ClassImpl
             
             cil.Emit(OpCodes.Ret);
 
-            return (TInterface)Activator.CreateInstance(Builder.CreateTypeInfo(), fields.Select(o => o.Value).ToArray());
+            return (TInterface)Activator.CreateInstance(Builder.CreateTypeInfo(), TypeFields.Values.ToArray());
+        }
+
+        internal FieldBuilder DefineField(string name, object value)
+        {
+            var field = Builder.DefineField(name, value.GetType(), FieldAttributes.InitOnly);
+            TypeFields.Add(field, value);
+
+            return field;
         }
 
         private MethodInfo GetMethod(string name, Type[] parameters)

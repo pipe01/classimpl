@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 
 namespace ClassImpl
@@ -23,7 +24,7 @@ namespace ClassImpl
 
         public MethodBuilder(MethodInfo method, Implementer<TInterface> implementer)
         {
-            if (method.ReturnType != null)
+            if (method.ReturnType != typeof(void))
                 throw new Exception($"Expected a method that returns void, instead it returns {method.ReturnType}");
 
             this.Method = method;
@@ -32,7 +33,21 @@ namespace ClassImpl
 
         public IMethodBuilder Callback(MethodCallbackNoParams action)
         {
-            throw new NotImplementedException();
+            string name = $"{typeof(TInterface).Name}.{Method.Name}";
+            var field = Implementer.DefineField(name + "Callback", action);
+
+            var method = Implementer.Builder.DefineMethod(name, MethodAttributes.Private | MethodAttributes.HideBySig
+                | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final);
+            var il = method.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, field);
+            il.EmitCall(OpCodes.Callvirt, action.GetType().GetMethod("Invoke"), null);
+            il.Emit(OpCodes.Ret);
+
+            Implementer.Builder.DefineMethodOverride(method, this.Method);
+
+            return this;
         }
 
         public IMethodBuilder Callback(MethodCallbackWithParams action)
