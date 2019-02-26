@@ -14,7 +14,8 @@ namespace Tester
         static void Main(string[] args)
         {
             var m = new Implementer<ITest>();
-            m.Method<string>(nameof(ITest.Test)).Callback(o =>
+            m.Method(o => o.Test(It.IsAny<string>(), It.IsAny<int>()))
+                .Callback(o =>
                 "hello");
 
             var test = m.Finish();

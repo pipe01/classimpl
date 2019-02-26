@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using TExecutor = System.Action<System.Reflection.MethodBase, object[]>;
@@ -33,28 +34,29 @@ namespace ClassImpl
         }
 
         /// <summary>
-        /// Returns a method builder, representing a method identified by <paramref name="methodName"/>
-        /// and optionally a number of <paramref name="parameters"/>.
+        /// Returns a method builder, representing a method identified by <paramref name="expression"/>.
         /// </summary>
-        /// <param name="methodName">The name of the method.</param>
-        /// <param name="parameters">The type of the method's parameters.
-        /// Must be passed if there is more than one method with the same name.</param>
-        public IMethodBuilder Method(string methodName, params Type[] parameters)
+        /// <param name="expression">An expression that calls the target method.</param>
+        public IMethodBuilder Method(Expression<Action<TInterface>> expression)
         {
-            return new MethodBuilder<TInterface>(GetMethod(methodName, parameters), this);
+            if (!(expression.Body is MethodCallExpression call))
+                throw new Exception("Expression must be a method call");
+
+            return new MethodBuilder<TInterface>(call.Method, this);
         }
 
         /// <summary>
         /// Returns a method builder, representing a method that returns a value of type <typeparamref name="TReturnType"/>
-        /// identified by <paramref name="methodName"/> and optionally a number of <paramref name="parameters"/>.
+        /// identified by <paramref name="expression"/>.
         /// </summary>
         /// <typeparam name="TReturnType">The type of the value that the method returns.</typeparam>
-        /// <param name="methodName">The name of the method.</param>
-        /// <param name="parameters">The type of the method's parameters.
-        /// Must be passed if there is more than one method with the same name.</param>
-        public IMethodBuilderWithReturnValue<TReturnType> Method<TReturnType>(string methodName, params Type[] parameters)
+        /// <param name="expression">An expression that calls the target method.</param>
+        public IMethodBuilderWithReturnValue<TReturnType> Method<TReturnType>(Expression<Func<TInterface, TReturnType>> expression)
         {
-            return new MethodBuilderWithReturnValue<TReturnType, TInterface>(GetMethod(methodName, parameters), this);
+            if (!(expression.Body is MethodCallExpression call))
+                throw new Exception("Expression must be a method call");
+
+            return new MethodBuilderWithReturnValue<TReturnType, TInterface>(call.Method, this);
         }
 
         public TInterface Finish()
