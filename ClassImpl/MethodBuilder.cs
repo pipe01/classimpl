@@ -18,23 +18,25 @@ namespace ClassImpl
         IMethodBuilder Callback(MethodCallbackWithParams action);
     }
 
-    internal class MethodBuilder<TInterface> : IMethodBuilder
+    internal class MethodBuilder : IMethodBuilder
     {
+        private readonly Type Type;
         private readonly MethodInfo Method;
-        private readonly Implementer<TInterface> Implementer;
+        private readonly Implementer Implementer;
 
-        public MethodBuilder(MethodInfo method, Implementer<TInterface> implementer)
+        public MethodBuilder(Type type, MethodInfo method, Implementer implementer)
         {
             if (method.ReturnType != typeof(void))
                 throw new Exception($"Expected a method that returns void, instead it returns {method.ReturnType}");
 
+            this.Type = type;
             this.Method = method;
             this.Implementer = implementer;
         }
 
         public IMethodBuilder Callback(MethodCallbackNoParams action)
         {
-            string name = $"{typeof(TInterface).Name}.{Method.Name}";
+            string name = $"{Type.Name}.{Method.Name}";
             var field = Implementer.DefineField(name + "Callback", action);
 
             var method = Implementer.Builder.DefineMethod(name, MethodAttributes.Private | MethodAttributes.HideBySig
@@ -53,7 +55,7 @@ namespace ClassImpl
 
         public IMethodBuilder Callback(MethodCallbackWithParams action)
         {
-            string name = $"{typeof(TInterface).Name}.{Method.Name}";
+            string name = $"{Type.Name}.{Method.Name}";
             var field = Implementer.DefineField(name + "Callback", action);
 
             var method = Implementer.Builder.DefineMethod(
@@ -87,24 +89,25 @@ namespace ClassImpl
         void Returns(TReturned value);
     }
 
-    public class MethodBuilderWithReturnValue<TReturned, TInterface> : IMethodBuilderWithReturnValue<TReturned>
+    internal class MethodBuilderWithReturnValue<TReturned> : IMethodBuilderWithReturnValue<TReturned>
     {
+        private readonly Type Type;
         private readonly MethodInfo Method;
-        private readonly Implementer<TInterface> Implementer;
+        private readonly Implementer Implementer;
 
-        public MethodBuilderWithReturnValue(MethodInfo method, Implementer<TInterface> implementer)
+        public MethodBuilderWithReturnValue(Type type, MethodInfo method, Implementer implementer)
         {
             if (method.ReturnType != typeof(TReturned))
                 throw new Exception($"Expected a method that returns type {typeof(TReturned)}, instead it returns {method.ReturnType}");
 
+            this.Type = type;
             this.Method = method;
             this.Implementer = implementer;
         }
-
-
+        
         public IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackNoParamsReturns<TReturned> func)
         {
-            string name = $"{typeof(TInterface).Name}.{Method.Name}";
+            string name = $"{Type.Name}.{Method.Name}";
             var field = Implementer.DefineField(name + "Callback", func);
 
             var method = Implementer.Builder.DefineMethod(
@@ -128,7 +131,7 @@ namespace ClassImpl
 
         public IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackWithParamsReturns<TReturned> func)
         {
-            string name = $"{typeof(TInterface).Name}.{Method.Name}";
+            string name = $"{Type.Name}.{Method.Name}";
             var field = Implementer.DefineField(name + "Callback", func);
 
             var method = Implementer.Builder.DefineMethod(
