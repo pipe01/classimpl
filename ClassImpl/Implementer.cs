@@ -42,7 +42,7 @@ namespace ClassImpl
         {
             if (expression.Body is MethodCallExpression call)
                 return new MethodBuilder<TInterface>(call.Method, this);
-
+            
             throw new Exception("Expression must be a method call");
         }
 
@@ -63,6 +63,22 @@ namespace ClassImpl
             throw new Exception("Expression must be a method call or a property access");
         }
         
+        public void Setter<TProperty>(Expression<Func<TInterface, TProperty>> expression, Action<TProperty> setter)
+        {
+            if (expression.Body is MemberExpression member && member.Member is PropertyInfo prop)
+            {
+                if (!prop.CanWrite)
+                    throw new InvalidOperationException("Property is read-only");
+
+                var builder = new MethodBuilder<TInterface>(prop.GetAccessors()[1], this);
+                builder.Callback(o => setter((TProperty)o.Values.First()));
+            }
+            else
+            {
+                throw new Exception("Expression must be a property accessor");
+            }
+        }
+
         public TInterface Finish()
         {
             if (IsFinished)

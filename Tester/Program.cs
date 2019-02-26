@@ -6,7 +6,7 @@ namespace Tester
 {
     public interface ITest
     {
-        string Property { get; }
+        string Property { get; set; }
 
         //string Test(string one, int two);
     }
@@ -16,10 +16,11 @@ namespace Tester
         static void Main(string[] args)
         {
             var m = new Implementer<ITest>();
-            m.Member(o => o.Property).Returns("asdsad");
+            m.Member(o => o.Property).Returns("eeeeeee");
+            m.Setter(o => o.Property, Console.WriteLine);
 
             var test = m.Finish();
-            var ret = test.Property;
+            test.Property = "asdasd";
         }
     }
 }
