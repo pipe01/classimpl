@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
@@ -52,7 +53,29 @@ namespace ClassImpl
 
         public IMethodBuilder Callback(MethodCallbackWithParams action)
         {
-            throw new NotImplementedException();
+            string name = $"{typeof(TInterface).Name}.{Method.Name}";
+            var field = Implementer.DefineField(name + "Callback", action);
+
+            var method = Implementer.Builder.DefineMethod(
+                name: name,
+                attributes: MethodAttributes.Private | MethodAttributes.HideBySig
+                    | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final,
+                returnType: typeof(void),
+                parameterTypes: Method.GetParameters().Select(o => o.ParameterType).ToArray());
+
+            var il = method.GetILGenerator();
+
+            il.CreateDicAndAddValues(Method);
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, field);
+            il.Emit(OpCodes.Ldloc_0);
+            il.EmitCall(OpCodes.Callvirt, action.GetType().GetMethod("Invoke"), null);
+            il.Emit(OpCodes.Ret);
+
+            Implementer.Builder.DefineMethodOverride(method, this.Method);
+
+            return this;
         }
     }
 
@@ -79,12 +102,52 @@ namespace ClassImpl
 
         public IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackNoParamsReturns<TReturned> func)
         {
-            throw new NotImplementedException();
+            string name = $"{typeof(TInterface).Name}.{Method.Name}";
+            var field = Implementer.DefineField(name + "Callback", func);
+
+            var method = Implementer.Builder.DefineMethod(
+                name: name,
+                attributes: MethodAttributes.Private | MethodAttributes.HideBySig
+                    | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final,
+                returnType: Method.ReturnType,
+                parameterTypes: null);
+
+            var il = method.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, field);
+            il.EmitCall(OpCodes.Callvirt, func.GetType().GetMethod("Invoke"), null);
+            il.Emit(OpCodes.Ret);
+
+            Implementer.Builder.DefineMethodOverride(method, this.Method);
+
+            return this;
         }
 
         public IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackWithParamsReturns<TReturned> func)
         {
-            throw new NotImplementedException();
+            string name = $"{typeof(TInterface).Name}.{Method.Name}";
+            var field = Implementer.DefineField(name + "Callback", func);
+
+            var method = Implementer.Builder.DefineMethod(
+                name: name,
+                attributes: MethodAttributes.Private | MethodAttributes.HideBySig
+                    | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.Final,
+                returnType: Method.ReturnType,
+                parameterTypes: Method.GetParameters().Select(o => o.ParameterType).ToArray());
+
+            var il = method.GetILGenerator();
+            il.CreateDicAndAddValues(Method);
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, field);
+            il.Emit(OpCodes.Ldloc_0);
+            il.EmitCall(OpCodes.Callvirt, func.GetType().GetMethod("Invoke"), null);
+            il.Emit(OpCodes.Ret);
+
+            Implementer.Builder.DefineMethodOverride(method, this.Method);
+
+            return this;
         }
     }
 }

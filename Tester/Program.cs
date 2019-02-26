@@ -1,11 +1,12 @@
 ﻿using ClassImpl;
 using System;
+using System.Collections.Generic;
 
 namespace Tester
 {
     public interface ITest
     {
-        void Test();
+        string Test(string one, int two);
     }
 
     class Program
@@ -13,10 +14,11 @@ namespace Tester
         static void Main(string[] args)
         {
             var m = new Implementer<ITest>();
-            m.Method(nameof(ITest.Test)).Callback(() => Console.WriteLine("Called!"));
+            m.Method<string>(nameof(ITest.Test)).Callback(o =>
+                "hello");
 
             var test = m.Finish();
-            test.Test();
+            var ret = test.Test("sdasd", 42);
         }
     }
 }

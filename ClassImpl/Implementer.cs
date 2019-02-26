@@ -91,7 +91,7 @@ namespace ClassImpl
             if (matching.Length == 0)
                 throw new KeyNotFoundException($"Method with name {name} not found in type {typeof(TInterface)}");
 
-            if (matching.Length > 0)
+            if (matching.Length > 1)
             {
                 matching = matching
                     .Where(o => o.GetParameters().Select(i => i.ParameterType).SequenceEqual(parameters))
