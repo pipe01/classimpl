@@ -38,28 +38,31 @@ namespace ClassImpl
         /// Returns a method builder, representing a method identified by <paramref name="expression"/>.
         /// </summary>
         /// <param name="expression">An expression that calls the target method.</param>
-        public IMethodBuilder Method(Expression<Action<TInterface>> expression)
+        public IMethodBuilder Member(Expression<Action<TInterface>> expression)
         {
-            if (!(expression.Body is MethodCallExpression call))
-                throw new Exception("Expression must be a method call");
+            if (expression.Body is MethodCallExpression call)
+                return new MethodBuilder<TInterface>(call.Method, this);
 
-            return new MethodBuilder<TInterface>(call.Method, this);
+            throw new Exception("Expression must be a method call");
         }
 
         /// <summary>
-        /// Returns a method builder, representing a method that returns a value of type <typeparamref name="TReturnType"/>
-        /// identified by <paramref name="expression"/>.
+        /// Returns a method builder, representing a method or a property that returns a value of type
+        /// <typeparamref name="TReturnType"/> identified by <paramref name="expression"/>.
         /// </summary>
         /// <typeparam name="TReturnType">The type of the value that the method returns.</typeparam>
         /// <param name="expression">An expression that calls the target method.</param>
-        public IMethodBuilderWithReturnValue<TReturnType> Method<TReturnType>(Expression<Func<TInterface, TReturnType>> expression)
+        public IMethodBuilderWithReturnValue<TReturnType> Member<TReturnType>(Expression<Func<TInterface, TReturnType>> expression)
         {
-            if (!(expression.Body is MethodCallExpression call))
-                throw new Exception("Expression must be a method call");
+            if (expression.Body is MethodCallExpression call)
+                return new MethodBuilderWithReturnValue<TReturnType, TInterface>(call.Method, this);
 
-            return new MethodBuilderWithReturnValue<TReturnType, TInterface>(call.Method, this);
+            if (expression.Body is MemberExpression member && member.Member is PropertyInfo prop)
+                return new MethodBuilderWithReturnValue<TReturnType, TInterface>(prop.GetAccessors()[0], this);
+
+            throw new Exception("Expression must be a method call or a property access");
         }
-
+        
         public TInterface Finish()
         {
             if (IsFinished)

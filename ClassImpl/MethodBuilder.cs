@@ -83,6 +83,8 @@ namespace ClassImpl
     {
         IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackNoParamsReturns<TReturned> func);
         IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackWithParamsReturns<TReturned> func);
+
+        void Returns(TReturned value);
     }
 
     public class MethodBuilderWithReturnValue<TReturned, TInterface> : IMethodBuilderWithReturnValue<TReturned>
@@ -149,5 +151,7 @@ namespace ClassImpl
 
             return this;
         }
+
+        public void Returns(TReturned value) => Callback(() => value);
     }
 }
