@@ -16,6 +16,8 @@ namespace ClassImpl
         internal readonly TypeBuilder Builder;
         internal readonly IDictionary<FieldBuilder, object> TypeFields = new Dictionary<FieldBuilder, object>();
 
+        private bool IsFinished;
+
         public Implementer()
         {
             if (!typeof(TInterface).IsInterface)
@@ -60,6 +62,11 @@ namespace ClassImpl
 
         public TInterface Finish()
         {
+            if (IsFinished)
+                throw new InvalidOperationException("This implementer has already been finished");
+
+            IsFinished = true;
+
             var fieldTypes = TypeFields.Select(o => o.Key.FieldType).ToArray();
             var cons = Builder.DefineConstructor(MethodAttributes.Public, CallingConventions.HasThis, fieldTypes);
             var cil = cons.GetILGenerator();
