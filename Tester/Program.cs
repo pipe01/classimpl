@@ -6,7 +6,8 @@ namespace Tester
 {
     public class ITest
     {
-        public virtual string Test(string a, int b) => "original";
+        public virtual void Test(string a, int b) { }
+        public virtual void Test2(string a, int b) { }
     }
 
     class Program
@@ -14,10 +15,13 @@ namespace Tester
         static void Main(string[] args)
         {
             var m = new Implementer<ITest>();
-            m.Member(o => o.Test(It.IsAny<string>(), It.IsAny<int>())).Callback(o => "modified");
+            m.HandleAll((method, ar2gs) =>
+            {
+
+            });
 
             var test = m.Finish();
-            var ret = test.Test("123123", 42);
+            test.Test("123123", 42);
         }
     }
 }

@@ -21,7 +21,7 @@ namespace ClassImpl
         public Implementer()
         {
             var interfaceType = typeof(TInterface);
-            
+
             Properties = Type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
             Methods = Type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
 
@@ -44,7 +44,7 @@ namespace ClassImpl
         {
             if (expression.Body is MethodCallExpression call)
                 return new MethodBuilder<TInterface>(call.Method, this);
-            
+
             throw new Exception("Expression must be a method call");
         }
 
@@ -64,7 +64,7 @@ namespace ClassImpl
 
             throw new Exception("Expression must be a method call or a property access");
         }
-        
+
         public void Setter<TProperty>(Expression<Func<TInterface, TProperty>> expression, Action<TProperty> setter)
         {
             if (expression.Body is MemberExpression member && member.Member is PropertyInfo prop)
@@ -81,6 +81,14 @@ namespace ClassImpl
             }
         }
 
+        public void HandleAll(Action<MethodBase, IDictionary<string, object>> handler)
+        {
+            foreach (var item in Methods.Where(o => o.ReturnType == typeof(void)))
+            {
+                new MethodBuilder<TInterface>(item, this).Callback(o => handler(item, o));
+            }
+        }
+
         public TInterface Finish()
         {
             if (IsFinished)
@@ -91,7 +99,7 @@ namespace ClassImpl
             var fieldTypes = TypeFields.Select(o => o.Key.FieldType).ToArray();
             var cons = Builder.DefineConstructor(MethodAttributes.Public, CallingConventions.HasThis, fieldTypes);
             var cil = cons.GetILGenerator();
-            
+
             int i = 1;
             foreach (var field in TypeFields.Keys)
             {
@@ -99,7 +107,7 @@ namespace ClassImpl
                 cil.Emit(OpCodes.Ldarg, i++);
                 cil.Emit(OpCodes.Stfld, field);
             }
-            
+
             cil.Emit(OpCodes.Ret);
 
             return (TInterface)Activator.CreateInstance(Builder.CreateTypeInfo(), TypeFields.Values.ToArray());
