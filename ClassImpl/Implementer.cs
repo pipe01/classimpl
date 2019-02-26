@@ -20,18 +20,20 @@ namespace ClassImpl
 
         public Implementer()
         {
-            if (!typeof(TInterface).IsInterface)
-                throw new Exception(nameof(TInterface) + " must be an interface type!");
-
+            var interfaceType = typeof(TInterface);
+            
             Properties = Type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
             Methods = Type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
 
-            var interfaceType = typeof(TInterface);
             string name = interfaceType.Name;
 
             var ab = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName { Name = "ProxyAssembly" + name }, AssemblyBuilderAccess.Run);
             var mb = ab.DefineDynamicModule("ProxyModule" + name);
-            Builder = mb.DefineType("<>Impl" + name, TypeAttributes.Class, null, new[] { interfaceType });
+
+            if (interfaceType.IsInterface)
+                Builder = mb.DefineType("<>Impl" + name, TypeAttributes.Class, null, new[] { interfaceType });
+            else
+                Builder = mb.DefineType("<>Impl" + name, TypeAttributes.Class, interfaceType);
         }
 
         /// <summary>

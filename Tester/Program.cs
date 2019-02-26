@@ -4,11 +4,9 @@ using System.Collections.Generic;
 
 namespace Tester
 {
-    public interface ITest
+    public class ITest
     {
-        string Property { get; set; }
-
-        //string Test(string one, int two);
+        public virtual string Test(string a, int b) => "original";
     }
 
     class Program
@@ -16,11 +14,10 @@ namespace Tester
         static void Main(string[] args)
         {
             var m = new Implementer<ITest>();
-            m.Member(o => o.Property).Returns("eeeeeee");
-            m.Setter(o => o.Property, Console.WriteLine);
+            m.Member(o => o.Test(It.IsAny<string>(), It.IsAny<int>())).Callback(o => "modified");
 
             var test = m.Finish();
-            test.Property = "asdasd";
+            var ret = test.Test("123123", 42);
         }
     }
 }
