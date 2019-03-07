@@ -1,27 +1,29 @@
 ﻿using ClassImpl;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 
 namespace Tester
 {
-    public class ITest
+    public interface ITest
     {
-        public virtual void Test(string a, int b) { }
-        public virtual void Test2(string a, int b) { }
+        string Prop1 { get; set; }
+        int Prop2 { get; }
     }
 
     class Program
     {
         static void Main(string[] args)
         {
-            var m = new Implementer<ITest>();
-            m.HandleAll((method, ar2gs) =>
-            {
+            var m = new Implementer(typeof(ITest));
+            m.Getter(m.Properties[0]).Callback(() => "hello");
+            m.Setter(m.Properties[0], Console.WriteLine);
+            m.Getter(m.Properties[1]).Returns(123);
 
-            });
-
-            var test = m.Finish();
-            test.Test("123123", 42);
+            var obj = (ITest)m.Finish();
+            var a = obj.Prop2;
+            obj.Prop1 = "what's up";
         }
+
+        public object Test() => 123;
     }
 }

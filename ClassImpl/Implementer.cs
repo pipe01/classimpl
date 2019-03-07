@@ -66,6 +66,22 @@ namespace ClassImpl
                 new MethodBuilder(Type, item, this).Callback(o => handler(item, o));
             }
         }
+        
+        public IMethodBuilder Member(MethodInfo method)
+        {
+            return new MethodBuilder(Type, method, this);
+        }
+
+        public IMethodBuilderWithReturnValue<object> Getter(PropertyInfo prop)
+        {
+            return new MethodBuilderWithReturnValue<object>(Type, prop.GetMethod, this);
+        }
+
+        public void Setter(PropertyInfo prop, Action<object> setter)
+        {
+            var builder = new MethodBuilder(Type, prop.SetMethod, this);
+            builder.Callback(o => setter(o.Values.First()));
+        }
 
         internal FieldBuilder DefineField(string name, object value)
         {
@@ -118,8 +134,7 @@ namespace ClassImpl
                 if (!prop.CanWrite)
                     throw new InvalidOperationException("Property is read-only");
 
-                var builder = new MethodBuilder(Type, prop.GetAccessors()[1], this);
-                builder.Callback(o => setter((TProperty)o.Values.First()));
+                Setter(prop, o => setter((TProperty)o));
             }
             else
             {

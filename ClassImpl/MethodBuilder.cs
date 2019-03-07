@@ -97,7 +97,7 @@ namespace ClassImpl
 
         public MethodBuilderWithReturnValue(Type type, MethodInfo method, Implementer implementer)
         {
-            if (method.ReturnType != typeof(TReturned))
+            if (method.ReturnType != typeof(TReturned) && typeof(TReturned) != typeof(object))
                 throw new Exception($"Expected a method that returns type {typeof(TReturned)}, instead it returns {method.ReturnType}");
 
             this.Type = type;
@@ -122,6 +122,10 @@ namespace ClassImpl
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldfld, field);
             il.EmitCall(OpCodes.Callvirt, func.GetType().GetMethod("Invoke"), null);
+
+            if (Method.ReturnType.IsValueType)
+                il.Emit(OpCodes.Unbox_Any, Method.ReturnType);
+
             il.Emit(OpCodes.Ret);
 
             Implementer.Builder.DefineMethodOverride(method, this.Method);
@@ -157,4 +161,37 @@ namespace ClassImpl
 
         public void Returns(TReturned value) => Callback(() => value);
     }
+
+    //public interface IMethodBuilderWithReturnValue
+    //{
+    //    IMethodBuilderWithReturnValue Callback(MethodCallbackNoParamsReturns<object> func);
+    //    IMethodBuilderWithReturnValue Callback(MethodCallbackWithParamsReturns<object> func);
+
+    //    void Returns(object value);
+    //}
+
+    //public class MethodBuilderWithReturnValue : IMethodBuilderWithReturnValue
+    //{
+    //    private IMethodBuilderWithReturnValue<object> Builder;
+
+    //    public MethodBuilderWithReturnValue(Type type, MethodInfo method, Implementer implementer)
+    //    {
+    //        this.Builder = new MethodBuilderWithReturnValue<object>(type, method, implementer);
+    //    }
+
+    //    public IMethodBuilderWithReturnValue Callback(MethodCallbackNoParamsReturns<object> func)
+    //    {
+
+    //    }
+
+    //    public IMethodBuilderWithReturnValue Callback(MethodCallbackWithParamsReturns<object> func)
+    //    {
+    //        throw new NotImplementedException();
+    //    }
+
+    //    public void Returns(object value)
+    //    {
+    //        throw new NotImplementedException();
+    //    }
+    //}
 }
