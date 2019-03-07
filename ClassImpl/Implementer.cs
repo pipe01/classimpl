@@ -10,8 +10,8 @@ namespace ClassImpl
     public class Implementer
     {
         protected readonly Type Type;
-        protected readonly PropertyInfo[] Properties;
-        protected readonly MethodInfo[] Methods;
+        public PropertyInfo[] Properties { get; }
+        public MethodInfo[] Methods { get; }
 
         internal readonly TypeBuilder Builder;
         internal readonly IDictionary<FieldBuilder, object> TypeFields = new Dictionary<FieldBuilder, object>();
