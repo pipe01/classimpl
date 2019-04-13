@@ -1,8 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
+
+    <PackageId>ClassImpl</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>pipe01</Authors>
+    <Company></Company>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageTags>fake;faking;class;interface;il</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
