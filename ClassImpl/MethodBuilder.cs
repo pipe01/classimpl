@@ -14,7 +14,16 @@ namespace ClassImpl
 
     public interface IMethodBuilder
     {
+        /// <summary>
+        /// Invoke <paramref name="action"/> action when the targeted method gets called.
+        /// </summary>
+        /// <param name="action">The method to invoke.</param>
         IMethodBuilder Callback(MethodCallbackNoParams action);
+
+        /// <summary>
+        /// Invoke <paramref name="action"/> action with the passed parameters when the targeted method gets called.
+        /// </summary>
+        /// <param name="action">The method to invoke.</param>
         IMethodBuilder Callback(MethodCallbackWithParams action);
     }
 
@@ -83,9 +92,23 @@ namespace ClassImpl
 
     public interface IMethodBuilderWithReturnValue<TReturned>
     {
+        /// <summary>
+        /// Invoke <paramref name="func"/> action when the targeted method gets called, and return its returned value.
+        /// </summary>
+        /// <param name="func">The method to invoke.</param>
         IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackNoParamsReturns<TReturned> func);
+
+        /// <summary>
+        /// Invoke <paramref name="func"/> action with the passed parameters when the targeted method gets called,
+        /// and return its returned value.
+        /// </summary>
+        /// <param name="func">The method to invoke.</param>
         IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackWithParamsReturns<TReturned> func);
 
+        /// <summary>
+        /// Shorthand for Callback(() => <paramref name="value"/>).
+        /// </summary>
+        /// <param name="value">The constant value to return.</param>
         void Returns(TReturned value);
     }
 

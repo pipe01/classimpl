@@ -10,6 +10,7 @@
     <Company></Company>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>fake;faking;class;interface;il</PackageTags>
+    <Description>Like a faking library, but oriented towards dynamic modification at runtime.</Description>
   </PropertyGroup>
 
   <ItemGroup>
