@@ -5,9 +5,11 @@
     <LangVersion>latest</LangVersion>
 
     <PackageId>ClassImpl</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.1.1</Version>
     <Authors>pipe01</Authors>
     <Company></Company>
+    <RepositoryUrl>https://github.com/pipe01/classimpl.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>fake;faking;class;interface;il</PackageTags>
     <Description>Like a faking library, but oriented towards dynamic modification at runtime.</Description>
