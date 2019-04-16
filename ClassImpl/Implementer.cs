@@ -8,10 +8,40 @@ using System.Reflection.Emit;
 namespace ClassImpl
 {
     /// <summary>
+    /// Represents a setter callback.
+    /// </summary>
+    /// <param name="value">The value that the property wants to be set to.</param>
+    public delegate void SetterDelegate(object value);
+
+    /// <summary>
+    /// Represents a setter callback with custom data.
+    /// </summary>
+    /// <param name="value">The value that the property wants to be set to.</param>
+    /// <param name="customData">The custom data for the object.</param>
+    public delegate void SetterDelegateWithData(object value, object customData);
+
+    /// <summary>
+    /// Represents a setter callback.
+    /// </summary>
+    /// <param name="value">The value that the property wants to be set to.</param>
+    /// <typeparam name="T">The type of the property's value.</typeparam>
+    public delegate void SetterDelegate<T>(T value);
+
+    /// <summary>
+    /// Represents a setter callback with custom data.
+    /// </summary>
+    /// <param name="value">The value that the property wants to be set to.</param>
+    /// <param name="customData">The custom data for the object.</param>
+    /// <typeparam name="T">The type of the property's value.</typeparam>
+    public delegate void SetterDelegateWithData<T>(T value, object customData);
+
+    /// <summary>
     /// Base non-generic implementer.
     /// </summary>
     public class Implementer
     {
+        internal const string CustomDataField = "<>CustomData";
+
         protected readonly Type Type;
 
         /// <summary>
@@ -24,10 +54,17 @@ namespace ClassImpl
         /// </summary>
         public MethodInfo[] Methods { get; }
 
+        /// <summary>
+        /// The custom data type.
+        /// </summary>
+        public Type DataType { get; }
+
         internal readonly TypeBuilder Builder;
         internal readonly IDictionary<FieldBuilder, object> TypeFields = new Dictionary<FieldBuilder, object>();
 
         private bool IsFinished;
+
+        internal readonly FieldBuilder DataField;
 
         /// <summary>
         /// Instantiates an implementer that implements the specified <paramref name="type"/>.
@@ -51,9 +88,24 @@ namespace ClassImpl
         }
 
         /// <summary>
+        /// Instantiates an implementer that implements the specified <paramref name="type"/> with arbitrary
+        /// custom data.
+        /// </summary>
+        /// <param name="type">The type to implement.</param>
+        /// <param name="dataType">The type of the custom data to use. This data can be referenced on all callbacks
+        /// as a param with name '__data'.</param>
+        public Implementer(Type type, Type dataType) : this(type)
+        {
+            this.DataType = dataType;
+
+            this.DataField = Builder.DefineField(CustomDataField, DataType, FieldAttributes.Private);
+        }
+
+        /// <summary>
         /// Finishes implementing the type and returns the implemented instance. Make sure to only call this method once.
         /// </summary>
-        public object Finish()
+        /// <param name="data">The data to pass to all callbacks.</param>
+        public object Finish(object data = null)
         {
             if (IsFinished)
                 throw new InvalidOperationException("This implementer has already been finished");
@@ -61,10 +113,20 @@ namespace ClassImpl
             IsFinished = true;
 
             var fieldTypes = TypeFields.Select(o => o.Key.FieldType).ToArray();
-            var cons = Builder.DefineConstructor(MethodAttributes.Public, CallingConventions.HasThis, fieldTypes);
-            var cil = cons.GetILGenerator();
 
-            int i = 1;
+            var ctorParams = DataType == null ? fieldTypes : new[] { DataType }.Concat(fieldTypes).ToArray();
+            var ctor = Builder.DefineConstructor(MethodAttributes.Public, CallingConventions.HasThis, ctorParams);
+
+            var cil = ctor.GetILGenerator();
+
+            if (DataType != null)
+            {
+                cil.Emit(OpCodes.Ldarg_0);
+                cil.Emit(OpCodes.Ldarg_1);
+                cil.Emit(OpCodes.Stfld, DataField);
+            }
+
+            int i = 1 + (DataType != null ? 1 : 0);
             foreach (var field in TypeFields.Keys)
             {
                 cil.Emit(OpCodes.Ldarg_0);
@@ -74,7 +136,8 @@ namespace ClassImpl
 
             cil.Emit(OpCodes.Ret);
 
-            return Activator.CreateInstance(Builder.CreateTypeInfo(), TypeFields.Values.ToArray());
+            return Activator.CreateInstance(Builder.CreateTypeInfo(),
+                (DataType != null ? new[] { data } : new object[0]).Concat(TypeFields.Values).ToArray());
         }
 
         /// <summary>
@@ -109,13 +172,26 @@ namespace ClassImpl
         }
 
         /// <summary>
-        /// Starts implementing a property setter.
+        /// Implements a property setter with custom data.
         /// </summary>
         /// <param name="prop">The property whose setter to implement.</param>
-        public void Setter(PropertyInfo prop, Action<object> setter)
+        public void Setter(PropertyInfo prop, SetterDelegateWithData setter)
+        {
+            if (DataType == null)
+                throw new InvalidOperationException("This object doesn't have any custom data!");
+
+            var builder = new MethodBuilder(Type, prop.SetMethod, this);
+            builder.Callback(o => setter(o["value"], o.TryGetValue("__data", out var d) ? d : null));
+        }
+
+        /// <summary>
+        /// Implements a property setter without custom data.
+        /// </summary>
+        /// <param name="prop">The property whose setter to implement.</param>
+        public void Setter(PropertyInfo prop, SetterDelegate setter)
         {
             var builder = new MethodBuilder(Type, prop.SetMethod, this);
-            builder.Callback(o => setter(o.Values.First()));
+            builder.Callback(o => setter(o["value"]));
         }
 
         internal FieldBuilder DefineField(string name, object value)
@@ -125,6 +201,22 @@ namespace ClassImpl
 
             return field;
         }
+
+        /// <summary>
+        /// Sets the custom data for an implemented object that has been returned by <see cref="Finish(object)"/>
+        /// or <see cref="Implementer{TInterface}.Finish(object)"/>.
+        /// </summary>
+        /// <param name="implementedObject">The implemented object.</param>
+        /// <param name="data">The data to be set.</param>
+        public static void SetData(object implementedObject, object data)
+        {
+            var field = implementedObject.GetType().GetField(CustomDataField, BindingFlags.NonPublic | BindingFlags.Instance);
+
+            if (field == null)
+                throw new ArgumentException("The object must have been returned by Implementer.Finish()", nameof(implementedObject));
+
+            field.SetValue(implementedObject, data);
+        }
     }
 
     /// <summary>
@@ -132,7 +224,20 @@ namespace ClassImpl
     /// </summary>
     public class Implementer<TInterface> : Implementer
     {
+        /// <summary>
+        /// Instantiates an implementer that implements the specified <typeparamref name="TInterface"/>.
+        /// </summary>
         public Implementer() : base(typeof(TInterface))
+        {
+        }
+
+        /// <summary>
+        /// Instantiates an implementer that implements the specified <typeparamref name="TInterface"/> with arbitrary
+        /// custom data.
+        /// </summary>
+        /// <param name="dataType">The type of the custom data to use. This data can be referenced on all callbacks
+        /// as a param with name '__data'.</param>
+        public Implementer(Type dataType) : base(typeof(TInterface), dataType)
         {
         }
 
@@ -166,19 +271,43 @@ namespace ClassImpl
         }
 
         /// <summary>
+        /// Adds a callback <paramref name="setter"/> that accepts custom data to the property of type <typeparamref name="TProperty"/>
+        /// identified by <paramref name="expression"/>.
+        /// </summary>
+        /// <typeparam name="TProperty">The property's type.</typeparam>
+        /// <param name="expression">An expression that references the target property.</param>
+        public void Setter<TProperty>(Expression<Func<TInterface, TProperty>> expression, SetterDelegateWithData<TProperty> setter)
+        {
+            if (DataType == null)
+                throw new InvalidOperationException("This object doesn't have any custom data!");
+
+            if (expression.Body is MemberExpression member && member.Member is PropertyInfo prop)
+            {
+                if (!prop.CanWrite)
+                    throw new InvalidOperationException("Property is read-only");
+
+                Setter(prop, (value, customData) => setter((TProperty)value, customData));
+            }
+            else
+            {
+                throw new Exception("Expression must be a property accessor");
+            }
+        }
+
+        /// <summary>
         /// Adds a callback <paramref name="setter"/> to the property of type <typeparamref name="TProperty"/>
         /// identified by <paramref name="expression"/>.
         /// </summary>
         /// <typeparam name="TProperty">The property's type.</typeparam>
         /// <param name="expression">An expression that references the target property.</param>
-        public void Setter<TProperty>(Expression<Func<TInterface, TProperty>> expression, Action<TProperty> setter)
+        public void Setter<TProperty>(Expression<Func<TInterface, TProperty>> expression, SetterDelegate<TProperty> setter)
         {
             if (expression.Body is MemberExpression member && member.Member is PropertyInfo prop)
             {
                 if (!prop.CanWrite)
                     throw new InvalidOperationException("Property is read-only");
 
-                Setter(prop, o => setter((TProperty)o));
+                Setter(prop, value => setter((TProperty)value));
             }
             else
             {
@@ -189,9 +318,10 @@ namespace ClassImpl
         /// <summary>
         /// Finishes implementing the type and returns the implemented instance. Make sure to only call this method once.
         /// </summary>
-        public new TInterface Finish()
+        /// <param name="data">The data to pass to all callbacks.</param>
+        public new TInterface Finish(object data = null)
         {
-            return (TInterface)base.Finish();
+            return (TInterface)base.Finish(data);
         }
     }
 }

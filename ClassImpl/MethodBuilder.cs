@@ -76,7 +76,7 @@ namespace ClassImpl
 
             var il = method.GetILGenerator();
 
-            il.CreateDicAndAddValues(Method);
+            il.CreateDicAndAddValues(Method, Implementer.DataField);
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldfld, field);
@@ -169,7 +169,7 @@ namespace ClassImpl
                 parameterTypes: Method.GetParameters().Select(o => o.ParameterType).ToArray());
 
             var il = method.GetILGenerator();
-            il.CreateDicAndAddValues(Method);
+            il.CreateDicAndAddValues(Method, Implementer.DataField);
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldfld, field);
