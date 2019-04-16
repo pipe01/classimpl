@@ -7,8 +7,7 @@ namespace Tester
 {
     public interface ITest
     {
-        string Prop1 { get; set; }
-        int Prop2 { get; }
+        bool On { get; set; }
     }
 
     class Program
@@ -17,15 +16,14 @@ namespace Tester
         {
             ITest obj = null;
 
-            var impl = new Implementer(typeof(ITest), typeof(string));
+            var impl = new Implementer(typeof(ITest), typeof(bool));
             impl.Getter(impl.Properties[0]).Callback(o => o["__data"]);
             impl.Setter(impl.Properties[0], Console.WriteLine);
-            impl.Getter(impl.Properties[1]).Returns(123);
 
-            obj = (ITest)impl.Finish("hello");
+            obj = (ITest)impl.Finish(true);
 
             //ClassUtils.Copy(obj, "new data");
-            Bench(() => ClassUtils.Copy(obj, "new data"));
+            Bench(() => ClassUtils.Copy(obj, false));
 
             Console.ReadKey(true);
             Main(args);

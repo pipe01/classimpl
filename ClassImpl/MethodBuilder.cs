@@ -175,6 +175,10 @@ namespace ClassImpl
             il.Emit(OpCodes.Ldfld, field);
             il.Emit(OpCodes.Ldloc_0);
             il.EmitCall(OpCodes.Callvirt, func.GetType().GetMethod("Invoke"), null);
+
+            if (Method.ReturnType.IsValueType)
+                il.Emit(OpCodes.Unbox_Any, Method.ReturnType);
+
             il.Emit(OpCodes.Ret);
 
             Implementer.Builder.DefineMethodOverride(method, this.Method);
