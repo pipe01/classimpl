@@ -1,5 +1,6 @@
 ﻿using ClassImpl;
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Tester
@@ -14,19 +15,36 @@ namespace Tester
     {
         static void Main(string[] args)
         {
-            var m = new Implementer(typeof(ITest), typeof(Func<string>));
-            m.Getter(m.Properties[0]).Callback(o => (o["__data"] as Func<string>)());
-            m.Setter(m.Properties[0], Console.WriteLine);
-            m.Getter(m.Properties[1]).Returns(123);
+            ITest obj = null;
 
-            int i = 0;
-            var obj = (ITest)m.Finish((Func<string>)(() => (i++).ToString()));
-            var a = obj.Prop1;
-            obj.Prop1 = "what's up";
+            var impl = new Implementer(typeof(ITest), typeof(string));
+            impl.Getter(impl.Properties[0]).Callback(o => o["__data"]);
+            impl.Setter(impl.Properties[0], Console.WriteLine);
+            impl.Getter(impl.Properties[1]).Returns(123);
 
-            var copy = Implementer.Copy(obj, (Func<string>)(() => "This is a copy"));
+            obj = (ITest)impl.Finish("hello");
+
+            //ClassUtils.Copy(obj, "new data");
+            Bench(() => ClassUtils.Copy(obj, "new data"));
+
+            Console.ReadKey(true);
+            Main(args);
         }
 
-        public object Test() => 123;
+        private static void Bench(Action action)
+        {
+            const int count = 500;
+
+            var sw = Stopwatch.StartNew();
+
+            for (int i = 0; i < count; i++)
+            {
+                action();
+            }
+
+            sw.Stop();
+
+            Console.WriteLine("Time per iteration: " + sw.Elapsed / count);
+        }
     }
 }
