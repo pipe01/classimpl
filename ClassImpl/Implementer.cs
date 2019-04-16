@@ -60,7 +60,7 @@ namespace ClassImpl
         public Type DataType { get; }
 
         internal readonly TypeBuilder Builder;
-        internal readonly IDictionary<FieldBuilder, object> TypeFields = new Dictionary<FieldBuilder, object>();
+        internal readonly IDictionary<FieldInfo, object> TypeFields = new Dictionary<FieldInfo, object>();
 
         private bool IsFinished;
 
@@ -196,7 +196,7 @@ namespace ClassImpl
 
         internal FieldBuilder DefineField(string name, object value)
         {
-            var field = Builder.DefineField(name, value.GetType(), FieldAttributes.InitOnly);
+            var field = Builder.DefineField("<>" + name, value.GetType(), FieldAttributes.InitOnly);
             TypeFields.Add(field, value);
 
             return field;
@@ -210,13 +210,73 @@ namespace ClassImpl
         /// <param name="data">The data to be set.</param>
         public static void SetData(object implementedObject, object data)
         {
-            var field = implementedObject.GetType().GetField(CustomDataField, BindingFlags.NonPublic | BindingFlags.Instance);
+            GetDataField(implementedObject?.GetType() ?? throw new ArgumentNullException(nameof(implementedObject)))
+                    .SetValue(implementedObject, data);
+        }
+
+        /// <summary>
+        /// Gets the custom data for an implemented object that has been returned by <see cref="Finish(object)"/>
+        /// or <see cref="Implementer{TInterface}.Finish(object)"/>.
+        /// </summary>
+        /// <param name="implementedObject">The implemented object.</param>
+        public static object GetData(object implementedObject)
+        {
+            return GetDataField(implementedObject?.GetType() ?? throw new ArgumentNullException(nameof(implementedObject)))
+                    .GetValue(implementedObject);
+        }
+
+        private static FieldInfo GetDataField(Type type)
+        {
+            var field = type.GetField(CustomDataField, BindingFlags.NonPublic | BindingFlags.Instance);
 
             if (field == null)
-                throw new ArgumentException("The object must have been returned by Implementer.Finish()", nameof(implementedObject));
+                throw new ArgumentException("The object must have been returned by Implementer.Finish()", nameof(type));
 
-            field.SetValue(implementedObject, data);
+            return field;
         }
+
+        private static T Copy<T>(T obj, object newData, bool setNewData)
+        {
+            if (obj == null)
+                throw new ArgumentNullException(nameof(obj));
+
+            var t = obj.GetType();
+
+            if (!t.Name.StartsWith("<>Impl"))
+                throw new ArgumentException("Invalid object");
+
+            var fieldValues = new List<object>();
+
+            foreach (var item in t.GetFields(BindingFlags.NonPublic | BindingFlags.Instance).Where(o => o.Name.StartsWith("<>")))
+            {
+                fieldValues.Add(item.GetValue(obj));
+            }
+
+            if (setNewData)
+            {
+                if (t.GetField("<>CustomData", BindingFlags.NonPublic | BindingFlags.Instance) == null)
+                    throw new InvalidOperationException("Tried to set custom data on an object that doesn't have any");
+
+                fieldValues[0] = newData;
+            }
+
+            return (T)Activator.CreateInstance(t, fieldValues.ToArray());
+        }
+
+        /// <summary>
+        /// Copies an implemented object with new custom data. This is orders of magnitude faster than re-implementing it.
+        /// </summary>
+        /// <typeparam name="T">The type of the implemented interface.</typeparam>
+        /// <param name="obj">The implemented object to copy.</param>
+        /// <param name="newData">The new data to set on the copied object.</param>
+        public static T Copy<T>(T obj, object newData) => Copy(obj, newData, true);
+
+        /// <summary>
+        /// Copies an implemented object. This is orders of magnitude faster than re-implementing it.
+        /// </summary>
+        /// <typeparam name="T">The type of the implemented interface.</typeparam>
+        /// <param name="obj">The implemented object to copy.</param>
+        public static T Copy<T>(T obj) => Copy(obj, null, false);
     }
 
     /// <summary>

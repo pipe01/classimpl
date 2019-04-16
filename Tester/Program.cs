@@ -16,8 +16,7 @@ namespace Tester
         {
             var m = new Implementer(typeof(ITest), typeof(Func<string>));
             m.Getter(m.Properties[0]).Callback(o => (o["__data"] as Func<string>)());
-            m.Setter(m.Properties[0], (o, data) =>
-            Console.WriteLine(o));
+            m.Setter(m.Properties[0], Console.WriteLine);
             m.Getter(m.Properties[1]).Returns(123);
 
             int i = 0;
@@ -25,7 +24,7 @@ namespace Tester
             var a = obj.Prop1;
             obj.Prop1 = "what's up";
 
-            Implementer.SetData(obj, (Func<string>)(() => (i += 2).ToString()));
+            var copy = Implementer.Copy(obj, (Func<string>)(() => "This is a copy"));
         }
 
         public object Test() => 123;
