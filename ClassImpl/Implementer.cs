@@ -145,7 +145,7 @@ namespace ClassImpl
         /// </summary>
         /// <param name="handler">The action to invoke when any method gets called on the type.
         /// This method receives the method that was called and its arguments.</param>
-        public void HandleAll(Action<MethodBase, IDictionary<string, object>> handler)
+        public void HandleAll(Action<MethodInfo, IDictionary<string, object>> handler)
         {
             foreach (var item in Methods.Where(o => o.ReturnType == typeof(void)))
             {
@@ -160,7 +160,7 @@ namespace ClassImpl
         /// <param name="includeNonReturningMethods">If true, methods without a return type will
         /// also be set with the handler, whose returning value will be ignored.</param>
         /// This method receives the method that was called and its arguments.</param>
-        public void HandleAll<T>(Func<MethodBase, IDictionary<string, object>, T> handlerFunc, bool includeNonReturningMethods = false)
+        public void HandleAll<T>(Func<MethodInfo, IDictionary<string, object>, T> handlerFunc, bool includeNonReturningMethods = false)
         {
             if (includeNonReturningMethods)
                 HandleAll(handler: (m, d) => handlerFunc(m, d));
