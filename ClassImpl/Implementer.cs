@@ -152,6 +152,24 @@ namespace ClassImpl
                 new MethodBuilder(Type, item, this).Callback(o => handler(item, o));
             }
         }
+        
+        /// <summary>
+        /// Adds a catch-all handler to methods with a return value.
+        /// </summary>
+        /// <param name="handlerFunc">The action to invoke when any method gets called on the type.
+        /// <param name="includeNonReturningMethods">If true, methods without a return type will
+        /// also be set with the handler, whose returning value will be ignored.</param>
+        /// This method receives the method that was called and its arguments.</param>
+        public void HandleAll<T>(Func<MethodBase, IDictionary<string, object>, T> handlerFunc, bool includeNonReturningMethods = false)
+        {
+            if (includeNonReturningMethods)
+                HandleAll(handler: (m, d) => handlerFunc(m, d));
+
+            foreach (var item in Methods.Where(o => o.ReturnType != typeof(void)))
+            {
+                new MethodBuilderWithReturnValue<T>(Type, item, this).Callback(o => handlerFunc(item, o));
+            }
+        }
 
         /// <summary>
         /// Start implementing a method.

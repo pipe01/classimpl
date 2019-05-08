@@ -7,7 +7,10 @@ namespace Tester
 {
     public interface ITest
     {
-        bool On { get; set; }
+        void NoReturn();
+        string YesReturn();
+        string YesReturn2();
+        int ReturnWTF();
     }
 
     class Program
@@ -17,16 +20,15 @@ namespace Tester
             ITest obj = null;
 
             var impl = new Implementer(typeof(ITest), typeof(bool));
-            impl.Getter(impl.Properties[0]).Callback(o => o["__data"]);
-            impl.Setter(impl.Properties[0], Console.WriteLine);
+            //impl.Getter(impl.Properties[0]).Callback(o => o["__data"]);
+            //impl.Setter(impl.Properties[0], Console.WriteLine);
+            impl.HandleAll((m, d) => "hello " + m.Name, true);
 
             obj = (ITest)impl.Finish(true);
 
-            //ClassUtils.Copy(obj, "new data");
-            Bench(() => ClassUtils.Copy(obj, false));
-
-            Console.ReadKey(true);
-            Main(args);
+            var a = obj.YesReturn();
+            a = obj.YesReturn2();
+            obj.ReturnWTF();
         }
 
         private static void Bench(Action action)
