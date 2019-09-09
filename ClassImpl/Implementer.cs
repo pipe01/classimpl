@@ -42,6 +42,8 @@ namespace ClassImpl
     {
         internal const string CustomDataField = "<>CustomData";
 
+        internal static readonly BindingFlags MemberBindingFlags = BindingFlags.Public | BindingFlags.Instance;
+
         protected readonly Type Type;
 
         /// <summary>
@@ -73,8 +75,8 @@ namespace ClassImpl
         public Implementer(Type type)
         {
             Type = type;
-            Properties = Type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            Methods = Type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
+            Properties = Type.GetProperties(MemberBindingFlags).Concat(Type.GetInterfaces().SelectMany(o => o.GetProperties(MemberBindingFlags))).ToArray();
+            Methods = Type.GetMethods(MemberBindingFlags).Concat(Type.GetInterfaces().SelectMany(o => o.GetMethods(MemberBindingFlags))).ToArray();
 
             string name = Type.Name;
 
@@ -145,9 +147,9 @@ namespace ClassImpl
         /// </summary>
         /// <param name="handler">The action to invoke when any method gets called on the type.
         /// This method receives the method that was called and its arguments.</param>
-        public void HandleAll(Action<MethodInfo, IDictionary<string, object>> handler)
+        public void HandleAll(Action<MethodInfo, IDictionary<string, object>> handler, Predicate<MethodInfo> predicate = null)
         {
-            foreach (var item in Methods.Where(o => o.ReturnType == typeof(void)))
+            foreach (var item in Methods.Where(o => o.ReturnType == typeof(void) && (predicate?.Invoke(o) ?? true)))
             {
                 new MethodBuilder(Type, item, this).Callback(o => handler(item, o));
             }
@@ -160,12 +162,12 @@ namespace ClassImpl
         /// <param name="includeNonReturningMethods">If true, methods without a return type will
         /// also be set with the handler, whose returning value will be ignored.</param>
         /// This method receives the method that was called and its arguments.</param>
-        public void HandleAll<T>(Func<MethodInfo, IDictionary<string, object>, T> handlerFunc, bool includeNonReturningMethods = false)
+        public void HandleAll<T>(Func<MethodInfo, IDictionary<string, object>, T> handlerFunc, Predicate<MethodInfo> predicate = null, bool includeNonReturningMethods = false)
         {
             if (includeNonReturningMethods)
                 HandleAll(handler: (m, d) => handlerFunc(m, d));
 
-            foreach (var item in Methods.Where(o => o.ReturnType != typeof(void)))
+            foreach (var item in Methods.Where(o => o.ReturnType != typeof(void) && (predicate?.Invoke(o) ?? true)))
             {
                 new MethodBuilderWithReturnValue<T>(Type, item, this).Callback(o => handlerFunc(item, o));
             }
