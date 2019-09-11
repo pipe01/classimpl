@@ -182,6 +182,11 @@ namespace ClassImpl
             return new MethodBuilder(Type, method, this);
         }
 
+        public IMethodBuilderWithReturnValue<T> Member<T>(MethodInfo method)
+        {
+            return new MethodBuilderWithReturnValue<T>(Type, method, this);
+        }
+
         /// <summary>
         /// Starts implementing a property getter.
         /// </summary>
