@@ -177,9 +177,9 @@ namespace ClassImpl
         /// Start implementing a method.
         /// </summary>
         /// <param name="method">The method to implement.</param>
-        public IMethodBuilder Member(MethodInfo method)
+        public IMethodBuilderWithReturnValue Member(MethodInfo method)
         {
-            return new MethodBuilder(Type, method, this);
+            return new MethodBuilderWithReturnValue<object>(Type, method, this);
         }
 
         public IMethodBuilderWithReturnValue<T> Member<T>(MethodInfo method)

@@ -112,7 +112,29 @@ namespace ClassImpl
         void Returns(TReturned value);
     }
 
-    internal class MethodBuilderWithReturnValue<TReturned> : IMethodBuilderWithReturnValue<TReturned>
+    public interface IMethodBuilderWithReturnValue
+    {
+        /// <summary>
+        /// Invoke <paramref name="func"/> action when the targeted method gets called, and return its returned value.
+        /// </summary>
+        /// <param name="func">The method to invoke.</param>
+        IMethodBuilderWithReturnValue Callback(MethodCallbackNoParamsReturns<object> func);
+
+        /// <summary>
+        /// Invoke <paramref name="func"/> action with the passed parameters when the targeted method gets called,
+        /// and return its returned value.
+        /// </summary>
+        /// <param name="func">The method to invoke.</param>
+        IMethodBuilderWithReturnValue Callback(MethodCallbackWithParamsReturns<object> func);
+
+        /// <summary>
+        /// Shorthand for Callback(() => <paramref name="value"/>).
+        /// </summary>
+        /// <param name="value">The constant value to return.</param>
+        void Returns(object value);
+    }
+
+    internal class MethodBuilderWithReturnValue<TReturned> : IMethodBuilderWithReturnValue<TReturned>, IMethodBuilderWithReturnValue
     {
         private readonly Type Type;
         private readonly MethodInfo Method;
@@ -127,8 +149,11 @@ namespace ClassImpl
             this.Method = method;
             this.Implementer = implementer;
         }
-        
+
         public IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackNoParamsReturns<TReturned> func)
+            => Callback(() => func());
+
+        public IMethodBuilderWithReturnValue Callback(MethodCallbackNoParamsReturns<object> func)
         {
             string name = $"{Type.Name}.{Method.Name}";
             var field = Implementer.DefineField(name + "Callback", func);
@@ -157,6 +182,9 @@ namespace ClassImpl
         }
 
         public IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackWithParamsReturns<TReturned> func)
+            => Callback(o => func(o));
+
+        public IMethodBuilderWithReturnValue Callback(MethodCallbackWithParamsReturns<object> func)
         {
             string name = $"{Type.Name}.{Method.Name}";
             var field = Implementer.DefineField(name + "Callback", func);
@@ -186,7 +214,9 @@ namespace ClassImpl
             return this;
         }
 
-        public void Returns(TReturned value) => Callback(() => value);
+        public void Returns(TReturned value) => Returns(value);
+
+        public void Returns(object value) => Callback(() => value);
     }
 
     //public interface IMethodBuilderWithReturnValue

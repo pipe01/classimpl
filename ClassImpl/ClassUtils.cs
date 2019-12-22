@@ -8,7 +8,7 @@ namespace ClassImpl
 {
     public static class ClassUtils
     {
-        private static IDictionary<(Type Type, bool SetData), Func<object, object, object>> CopyFuncCache = new Dictionary<(Type, bool), Func<object, object, object>>();
+        private static readonly IDictionary<(Type Type, bool SetData), Func<object, object, object>> CopyFuncCache = new Dictionary<(Type, bool), Func<object, object, object>>();
 
         /// <summary>
         /// Sets the custom data for an implemented object that has been returned by <see cref="Finish(object)"/>
