@@ -182,7 +182,7 @@ namespace ClassImpl
         }
 
         public IMethodBuilderWithReturnValue<TReturned> Callback(MethodCallbackWithParamsReturns<TReturned> func)
-            => Callback(o => func(o));
+            => (IMethodBuilderWithReturnValue<TReturned>)Callback((MethodCallbackWithParamsReturns<object>)(o => func(o)));
 
         public IMethodBuilderWithReturnValue Callback(MethodCallbackWithParamsReturns<object> func)
         {
