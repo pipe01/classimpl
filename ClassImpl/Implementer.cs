@@ -75,8 +75,8 @@ namespace ClassImpl
         public Implementer(Type type)
         {
             Type = type;
-            Properties = Type.GetProperties(MemberBindingFlags).Concat(Type.GetInterfaces().SelectMany(o => o.GetProperties(MemberBindingFlags))).ToArray();
-            Methods = Type.GetMethods(MemberBindingFlags).Concat(Type.GetInterfaces().SelectMany(o => o.GetMethods(MemberBindingFlags))).ToArray();
+            Properties = Type.GetTypeAndInterfaces().SelectMany(o => o.GetProperties(MemberBindingFlags)).ToArray();
+            Methods = Type.GetTypeAndInterfaces().SelectMany(o => o.GetMethods(MemberBindingFlags)).ToArray();
 
             string name = Type.Name;
 
@@ -179,7 +179,9 @@ namespace ClassImpl
         /// <param name="method">The method to implement.</param>
         public IMethodBuilderWithReturnValue Member(MethodInfo method)
         {
-            return new MethodBuilderWithReturnValue<object>(Type, method, this);
+            return (IMethodBuilderWithReturnValue)Activator.CreateInstance(
+                typeof(MethodBuilderWithReturnValue<>).MakeGenericType(method.ReturnType),
+                Type, method, this);
         }
 
         public IMethodBuilderWithReturnValue<T> Member<T>(MethodInfo method)

@@ -20,8 +20,4 @@
     <PackageReference Include="System.ValueTuple" Version="4.5.0" Condition="'$(TargetFramework)' == 'net45'" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;C:\Users\piper\Documents\Visual Studio 2017\Projects\Logical\Client\Assets\ClassImpl\&quot;&#xD;&#xA;copy &quot;$(TargetDir)$(TargetName).pdb&quot; &quot;C:\Users\piper\Documents\Visual Studio 2017\Projects\Logical\Client\Assets\ClassImpl\&quot;" />
-  </Target>
-
 </Project>
