@@ -1,0 +1,14 @@
+{
+  "name": "com.pipe01.classimpl",
+  "displayName": "ClassImpl",
+  "version": "1.0.0",
+  "unity": "2019.2",
+  "description": "Code new classes at runtime!",
+  "keywords": [
+    "faking",
+    "dynamic"
+  ],
+  "category": "penis lmao",
+  "dependencies": {
+  }
+}
