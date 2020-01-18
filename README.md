@@ -1,4 +1,4 @@
-# classimpl
+# ClassImpl
 ![nuget](https://img.shields.io/nuget/v/ClassImpl.svg)
 
 Like a faking library, but oriented towards dynamic modification at runtime.
